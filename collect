@@ -6,8 +6,8 @@ for ip in "${(@f)$( traceroute -q 1 www.google.com | rg -i "^ " | rg -io "[0-9]+
   echo "Getting IP:$ip"
   res=$( GOSNMP_TARGET=$ip GOSNMP_PORT=161 go run snmp.go )
   # echo $res
-  echo $res | rg "Parsed.*EngineID"
-  echo $res | rg "Parsed.*EngineBoots"
-  echo $res | rg "Parsed.*EngineTimes"
+  echo $res | rg -a "Parsed.*EngineID"
+  echo $res | rg -a "Parsed.*EngineBoots"
+  echo $res | rg -a "Parsed.*EngineTimes"
 done
 
