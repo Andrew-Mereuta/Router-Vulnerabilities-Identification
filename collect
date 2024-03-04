@@ -4,11 +4,12 @@ echo "What url to trace to:"
 read url
 
 for ip in "${(@f)$( traceroute -q 1 $url | rg -i "^ " | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\)" | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" )}"; do
-  echo "Getting IP:$ip"
   res=$( GOSNMP_TARGET=$ip GOSNMP_PORT=161 go run snmp.go )
   # echo $res
-  echo $res | rg -a "Parsed.*EngineID"
-  echo $res | rg -a "Parsed.*EngineBoots"
-  echo $res | rg -a "Parsed.*EngineTimes"
+  id=$( echo $res | rg -a "^Parsed.*authoritativeEngineID" | rg -o "\w+$" )
+  boots=$( echo $res | rg -a "^Parsed.*EngineBoots" | rg -m 1 -o "\w+$" )
+  uptime=$( echo $res | rg -a "^Parsed.*EngineTime" | rg -m 1 -o "\w+$" )
+  echo "$ip: $id, $boots, $uptime"
+  echo "$ip,$id,$boots,$uptime" >> data/$url.csv
 done
 
