@@ -1,8 +1,9 @@
 #! /bin/env zsh
 
-ips="${(@f)$( traceroute -q 1 www.bing.com | rg -i "^ " | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\)" | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" )}"
+echo "What url to trace to:"
+read url
 
-for ip in "${(@f)$( traceroute -q 1 www.google.com | rg -i "^ " | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\)" | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" )}"; do
+for ip in "${(@f)$( traceroute -q 1 $url | rg -i "^ " | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\)" | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" )}"; do
   echo "Getting IP:$ip"
   res=$( GOSNMP_TARGET=$ip GOSNMP_PORT=161 go run snmp.go )
   # echo $res
