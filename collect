@@ -6,10 +6,11 @@ read url
 for ip in "${(@f)$( traceroute -q 1 $url | rg -i "^ " | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\)" | rg -io "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" )}"; do
   res=$( GOSNMP_TARGET=$ip GOSNMP_PORT=161 go run snmp.go )
   # echo $res
+  timestamp=$( echo $res | rg -m 1 -a "Time: " | rg -o "\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ .\d{4} \w+ m=.\d\.\d+$" )
   id=$( echo $res | rg -a "^Parsed.*authoritativeEngineID" | rg -o "\w+$" )
   boots=$( echo $res | rg -a "^Parsed.*EngineBoots" | rg -m 1 -o "\w+$" )
   uptime=$( echo $res | rg -a "^Parsed.*EngineTime" | rg -m 1 -o "\w+$" )
-  echo "$ip: $id, $boots, $uptime"
-  echo "$ip,$id,$boots,$uptime" >> data/$url.csv
+  echo "$ip: $id, $boots, $uptime @$timestamp"
+  echo "$timestamp,$ip,$id,$boots,$uptime" >> data/$url.csv
 done
 

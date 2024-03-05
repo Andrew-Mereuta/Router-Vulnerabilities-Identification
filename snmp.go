@@ -90,9 +90,10 @@ func main() {
 	// params.OnSent = func(x *g.GoSNMP) {
 	// 	sent = time.Now()
 	// }
-	// params.OnRecv = func(x *g.GoSNMP) {
-	// 	log.Println("Query latency in seconds:", time.Since(sent).Seconds())
-	// }
+	params.OnRecv = func(x *g.GoSNMP) {
+		// log.Println("Query latency in seconds:", time.Since(sent).Seconds())
+		fmt.Println("Time: ", time.Now())
+	}
 
 	oids := []string{"1.3.6.1.2.1.1.4.0", "1.3.6.1.2.1.1.7.0"}
 	result, err2 := params.Get(oids) // Get() accepts up to g.MAX_OIDS
