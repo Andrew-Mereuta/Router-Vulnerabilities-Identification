@@ -98,8 +98,11 @@ func main() {
 	oids := []string{"1.3.6.1.2.1.1.4.0", "1.3.6.1.2.1.1.7.0"}
 	result, err2 := params.Get(oids) // Get() accepts up to g.MAX_OIDS
 	if err2 != nil {
+		log.Printf("Sec: %v", result.SecurityParameters)
+		log.Printf("Other: %v", result.Timestamp)
+		log.Printf("Other: %v", result.SecurityParameters.Description())
+		log.Printf("Result is %v", result)
 		os.Exit(0)
-		log.Printf("%v", result.Variables)
 		log.Fatalf("Get() err: %v", err2)
 	}
 
