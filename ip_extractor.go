@@ -18,9 +18,11 @@ const (
 
 func main() {
 	ipsSet := make(map[string]bool)
+	// getDomains reads the domain.txt file and returns all unique website domains
 	hosts := getDomains()
 
 	for _, host := range hosts {
+		// traceroute(host) performs a traceroute operation in golang and returns set of ips, that were travelled through
 		ips, err := traceroute(host)
 		if err != nil {
 			fmt.Println("Traceroute error:", err)
@@ -32,6 +34,7 @@ func main() {
 		}
 	}
 
+	// Create file to store all unique ip addresses
 	file, err := os.Create("ips.txt")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
@@ -40,6 +43,7 @@ func main() {
 	defer file.Close()
 	writer := bufio.NewWriter(file)
 
+	// Save all ip addresses to the file.
 	for ip := range ipsSet {
 		_, fErr := writer.WriteString(ip + "\n")
 		if fErr != nil {
