@@ -116,14 +116,14 @@ func load_enterprise_numbers(path string) ([]vendor, error) {
 }
 
 func decode_engine_id(id string, ens []vendor) (EngineId, error) {
-	if len(id) != 24 {
-		return nil, New(fmt.Sprintf("Incorrect ID string length (expected 24, but got %d)", len(id)))
+	if len(id) < 12 {
+		return nil, New(fmt.Sprintf("Incorrect ID string length (expected at least 12, but got %d)", len(id)))
 	}
-	vendor_id, err := strconv.ParseUint(id[:12], 16, 64)
+	vendor_id, err := strconv.ParseUint(id[:8], 16, 64)
 	if err != nil {
 		return nil, err
 	}
-	id_int, err := strconv.ParseUint(id[12:], 16, 64)
+	id_int, err := strconv.ParseUint(id[8:], 16, 64)
 	if err != nil {
 		return nil, err
 	}
