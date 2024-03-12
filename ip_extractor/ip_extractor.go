@@ -1,4 +1,4 @@
-package main
+package ip_extractor
 
 import (
 	"bufio"
@@ -16,8 +16,18 @@ const (
 	icmpProtocol = 1
 )
 
-func main() {
-	ipsSet := make(map[string]bool)
+func ExtractIPs() {
+
+	// Create file to store all unique ip addresses
+	file, err := os.Create("./input/ips.txt")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+
+	// ipsSet := make(map[string]bool)
 	// getDomains reads the domain.txt file and returns all unique website domains
 	hosts := getDomains()
 
@@ -29,37 +39,54 @@ func main() {
 			return
 		}
 
+		// Write the domain to the file
+        _, fErr := writer.WriteString(host)
+        if fErr != nil {
+            fmt.Println("Error writing to file:", fErr)
+            return
+        }
+
 		for ip := range ips {
-			ipsSet[ip] = true
-		}
-	}
+            _, fErr := writer.WriteString(", " + ip)
+            if fErr != nil {
+                fmt.Println("Error writing to file:", fErr)
+                return
+            }
+        }
 
-	// Create file to store all unique ip addresses
-	file, err := os.Create("ips.txt")
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-	writer := bufio.NewWriter(file)
+		_, fErr = writer.WriteString("\n")
+        if fErr != nil {
+            fmt.Println("Error writing to file:", fErr)
+            return
+        }
 
-	// Save all ip addresses to the file.
-	for ip := range ipsSet {
-		_, fErr := writer.WriteString(ip + "\n")
-		if fErr != nil {
-			fmt.Println("Error writing to file:", fErr)
+		if fErr := writer.Flush(); fErr != nil {
+			fmt.Println("Error flushing writer:", fErr)
 			return
 		}
+
+		// for ip := range ips {
+		// 	ipsSet[ip] = true
+		// }
 	}
 
-	if fErr := writer.Flush(); fErr != nil {
-		fmt.Println("Error flushing writer:", fErr)
-		return
-	}
+	// Save all ip addresses to the file.
+	// for ip := range ipsSet {
+	// 	_, fErr := writer.WriteString(ip + "\n")
+	// 	if fErr != nil {
+	// 		fmt.Println("Error writing to file:", fErr)
+	// 		return
+	// 	}
+	// }
+
+	// if fErr := writer.Flush(); fErr != nil {
+	// 	fmt.Println("Error flushing writer:", fErr)
+	// 	return
+	// }
 }
 
 func getDomains() []string {
-	file, err := os.Open("domains.txt")
+	file, err := os.Open("./input/domains.txt")
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return make([]string, 0)
