@@ -1,10 +1,12 @@
 package main
 
 import (
-	csv "encoding/csv"
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -113,6 +115,47 @@ func load_enterprise_numbers(path string) ([]vendor, error) {
 		})
 	}
 	return ens, nil
+}
+
+type MacBlock struct {
+	prefix     string
+	name       string
+	blockType  string
+	lastUpdate string
+	private    bool
+}
+
+func load_mac_blocks(path string) ([]MacBlock, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	type TmpBlock struct {
+		// names are ones that reflect the json we downloaded
+		MacPrefix  string
+		VendorName string
+		BlockType  string
+		LastUpdate string
+		private    bool
+	}
+	dec := json.NewDecoder(file)
+	tmp := []TmpBlock{}
+	dec_err := dec.Decode(&tmp)
+	if dec_err != nil {
+		return nil, dec_err
+	}
+	ret := []MacBlock{}
+	for _, block := range tmp {
+		shortened := strings.ReplaceAll(block.MacPrefix, ":", "")
+		ret = append(ret, MacBlock{
+			shortened,
+			block.VendorName,
+			block.BlockType,
+			block.LastUpdate,
+			block.private,
+		})
+	}
+	return ret, nil
 }
 
 func decode_engine_id(id string, ens []vendor) (EngineId, error) {

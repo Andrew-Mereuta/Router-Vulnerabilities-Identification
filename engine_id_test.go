@@ -47,3 +47,10 @@ func TestEngineIDParse(t *testing.T) {
 	}
 	// TODO: check rest of the data
 }
+
+func TestLoadMacBlock(t *testing.T) {
+	_, err := load_mac_blocks("data/mac-vendors-export.json")
+	if err != nil {
+		t.Fatalf("Got an error: %v", err)
+	}
+}
