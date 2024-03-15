@@ -1,6 +1,6 @@
 use anyhow::Result;
 use csv::ReaderBuilder;
-use std::{fs, u128};
+use std::{collections::HashSet, fs, u128};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -8,19 +8,30 @@ enum VendorParseError {
     #[error("Vendor entry (index: {0}) is missing an id.")]
     MissingID(usize),
     #[error("Vendor entry (index: {0}, id: {1}) is missing a name.")]
-    MissingName(usize, u128),
+    MissingName(usize, u64),
     #[error("Vendor \"{2}\" (index: {0}, id: {1}) is missing a contact.")]
-    MissingContact(usize, u128, String),
+    MissingContact(usize, u64, String),
     #[error("Vendor \"{2}\" (index: {0}, id: {1}) is missing an email.")]
-    MissingEmail(usize, u128, String),
+    MissingEmail(usize, u64, String),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 struct Vendor {
-    id: u128,
+    id: u64,
     name: String,
     contact: String,
     email: String,
+}
+
+impl From<Vendor> for json::JsonValue {
+    fn from(vendor: Vendor) -> json::JsonValue {
+        json::object! {
+            id: vendor.id,
+            name: vendor.name,
+            contact: vendor.contact,
+            email: vendor.email,
+        }
+    }
 }
 
 #[derive(Error, Debug)]
@@ -40,6 +51,18 @@ struct MacBlock {
     last_update: String,
 }
 
+impl From<&MacBlock> for json::JsonValue {
+    fn from(value: &MacBlock) -> Self {
+        json::object! {
+            name: value.name.to_owned(),
+            prefix: value.prefix.to_owned(),
+            block_type: value.block_type.to_owned(),
+            last_update: value.last_update.to_owned(),
+            private: value.private,
+        }
+    }
+}
+
 #[derive(Error, Debug)]
 enum DeviceParseError {
     #[error("EngineID ({0:#x}) has unused format: {1}")]
@@ -53,7 +76,7 @@ enum DeviceID<'a> {
         blocks: Vec<&'a MacBlock>,
     },
     IPv4([u8; 4]),
-    IPv6(u128),
+    IPv6([u16; 8]),
     Text(String),
     Octid([u8; 27]),
 }
@@ -62,34 +85,17 @@ impl<'a> DeviceID<'a> {
     fn new(id: u128, overflow: u128, id_l: usize, mac_blocks: &'a [MacBlock]) -> Result<Self> {
         let format_mask = 0x0000_0000_ff00_0000_0000_0000_0000_0000;
         let id_mask = 0x0000_0000_00ff_ffff_ffff_ffff_ffff_ffff;
-        println!("-- device step --");
-        println!(
-            "{}",
-            format!("{:#034x}{:#034x}, {}", id, overflow, id_l).replace("0x", "")
-        );
-        println!(
-            "{}",
-            format!(
-                "--format:--\n{:#034x}\n{:#034x}\n{:#034x}",
-                format_mask,
-                id & format_mask,
-                (id & format_mask) >> 88
-            )
-            .replace("0x", "")
-        );
-        println!(
-            "{}",
-            format!(
-                "--id:--\n{:#034x}\n{:#034x}\n{:#034x}",
-                id_mask,
-                id & id_mask,
-                (id & id_mask) >> 32,
-            )
-            .replace("0x", "")
-        );
         Ok(match ((id & format_mask) >> 88) as u8 {
             1 => DeviceID::IPv4((((id_mask & id) >> 56) as u32).to_be_bytes()),
-            2 => DeviceID::IPv6(((id_mask & id) << 40) + (overflow >> 88)),
+            2 => DeviceID::IPv6(
+                (((id_mask & id) << 40) + (overflow >> 88))
+                    .to_be_bytes()
+                    .chunks_exact(2)
+                    .map(|s| u16::from_be_bytes(s.try_into().unwrap()))
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .expect("16 bytes should be 8 u16"),
+            ),
             3 => {
                 let id_str = (id_mask & id).to_be_bytes()[6..12]
                     .iter()
@@ -145,11 +151,6 @@ impl<'a> EngineID<'a> {
         vendors: &'a [Vendor],
         mac_blocks: &'a [MacBlock],
     ) -> Result<Self> {
-        println!("-- engine step --");
-        println!(
-            "{}",
-            format!("{:#034x}{:#034x}", id, overflow).replace("0x", "")
-        );
         let conform_mask = 0x8000_0000_0000_0000_0000_0000_0000_0000;
         let vendor_mask = 0x7fff_ffff_0000_0000_0000_0000_0000_0000;
         let vendor = &vendors[((vendor_mask & id) >> 96) as usize];
@@ -184,6 +185,40 @@ impl<'a> EngineID<'a> {
     }
 }
 
+impl From<EngineID<'_>> for json::JsonValue {
+    fn from(id: EngineID<'_>) -> json::JsonValue {
+        match id {
+            EngineID::CustomFormat { vendor, id } => json::object! {
+                vendor: vendor.clone(),
+                id: id
+            },
+            EngineID::CorrectFormat { vendor, id } => match id {
+                DeviceID::IPv4(ip) => json::object! {
+                    vendor: vendor.clone(),
+                    ipv4: format!("{}.{}.{}.{}", ip[0], ip[1],ip[2], ip[3]),
+                },
+                DeviceID::IPv6(ip) => json::object! {
+                    vendor: vendor.clone(),
+                    ipv6: format!("{}:{}:{}:{}:{}:{}:{}:{}", ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip[6], ip[7]),
+                },
+                DeviceID::Mac { address, blocks } => json::object! {
+                    vendor: vendor.clone(),
+                    mac_address: address,
+                    mac_blocks: blocks,
+                },
+                DeviceID::Text(id) => json::object! {
+                    vendor: vendor.clone(),
+                    id: id,
+                },
+                DeviceID::Octid(bytes) => json::object! {
+                    vendor: vendor.clone(),
+                    octets: bytes.as_slice(),
+                },
+            },
+        }
+    }
+}
+
 fn load_vendors(file: &str) -> Result<Vec<Vendor>> {
     ReaderBuilder::new()
         .from_reader(file.as_bytes())
@@ -194,7 +229,7 @@ fn load_vendors(file: &str) -> Result<Vec<Vendor>> {
             let id = record
                 .get(0)
                 .ok_or(VendorParseError::MissingID(i))?
-                .parse::<u128>()?;
+                .parse::<u64>()?;
             let name = record.get(1).ok_or(VendorParseError::MissingName(i, id))?;
             let contact =
                 record
@@ -282,7 +317,6 @@ fn main() -> Result<()> {
         )
         .records()
         .filter_map(|res| {
-            // TODO: discuss error handling and fail conditions
             let rec = match res {
                 Err(error) => {
                     println!("Something went wrong while parsing.({})", error);
@@ -290,18 +324,31 @@ fn main() -> Result<()> {
                 }
                 Ok(val) => val,
             };
-            rec.get(4).map(|entry| match entry {
-                "Error" => None,
-                id_str => match EngineID::from_string(id_str, &vendors, &mac_blocks) {
-                    Err(error) => {
-                        println!("Error parsing id({}): {}", id_str.to_owned(), error);
-                        None
-                    }
-                    eng_id => Some((id_str.to_owned(), eng_id)),
-                },
-            })
+            match rec.get(4) {
+                Some("Error") | None => None,
+                Some(s) => Some(s.to_owned()),
+            }
+        })
+        .collect::<HashSet<_>>()
+        .iter()
+        .filter_map(
+            |id_str| match EngineID::from_string(id_str, &vendors, &mac_blocks) {
+                // parse failed, log it
+                Err(error) => {
+                    println!("Error parsing id({}): {}", id_str.to_owned(), error);
+                    None
+                }
+                // parse succeeded
+                Ok(eng_id) => Some((id_str.to_owned(), eng_id)),
+            },
+        )
+        .fold(json::JsonValue::new_object(), |mut o, (s, id)| {
+            o.insert(&s, id)
+                .expect("Should be able to insert into an object.");
+            o
         });
-    // TODO: write out ids to another CSV file
+    // TODO: extend data instead of just replace?
+    fs::write("data/engine_ids.json", json::stringify(ids))?;
     Ok(())
 }
 
@@ -391,7 +438,9 @@ mod tests {
             custom,
             EngineID::CorrectFormat {
                 vendor: &vendors[9],
-                id: crate::DeviceID::IPv6(0x00112233445566778899aabbccddeeff),
+                id: crate::DeviceID::IPv6([
+                    0x11, 0x2233, 0x4455, 0x6677, 0x8899, 0xaabb, 0xccdd, 0xeeff
+                ]),
             }
         );
 
