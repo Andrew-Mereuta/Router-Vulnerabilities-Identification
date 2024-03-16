@@ -1,13 +1,14 @@
 package snmp_sender
 
 import (
-	"fmt"
 	"bufio"
-	"os"
-	"time"
-	"regexp"
 	"encoding/csv"
+	"fmt"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gosnmp/gosnmp"
 )
@@ -46,7 +47,7 @@ func createCSVFile() (*csv.Writer, error) {
 
 	writer := csv.NewWriter(csvFile)
 	// Write the header
-	writer.Write([]string{"Domain","IP", "AuthoritativeEngineBoots", "AuthoritativeEngineTimes", "EngineID", "ScanTime"})
+	writer.Write([]string{"Domain", "IP", "AuthoritativeEngineBoots", "AuthoritativeEngineTimes", "EngineID", "ScanTime"})
 	writer.Flush()
 
 	return writer, nil
@@ -56,12 +57,12 @@ func createCSVFile() (*csv.Writer, error) {
 func getSNMPValues(ip string) ([]string, error) {
 	// Setup the SNMP connection with the given IP and missing authentication
 	snmp := &gosnmp.GoSNMP{
-		Target: ip,
-		Port: 161,
-		Version: gosnmp.Version3,
+		Target:        ip,
+		Port:          161,
+		Version:       gosnmp.Version3,
 		SecurityModel: gosnmp.UserSecurityModel,
-		Timeout:	time.Duration(2) * time.Second,
-		Retries: 0,
+		Timeout:       time.Duration(2) * time.Second,
+		Retries:       0,
 		SecurityParameters: &gosnmp.UsmSecurityParameters{
 			UserName: " ",
 		},
@@ -92,8 +93,17 @@ func getSNMPValues(ip string) ([]string, error) {
 
 	// Check if all values were found
 	if len(matchBoots) > 0 && len(matchTime) > 0 && len(matchEngineID) > 0 {
-		scanTime := time.Now().Format(time.RFC3339)
-		return []string{ip, matchBoots[1], matchTime[1], matchEngineID[1], scanTime}, nil
+		now := time.Now()
+		scanTime := now.Format(time.RFC3339)
+
+		secondsInt, err := strconv.Atoi(matchTime[1])
+		if err != nil {
+			return nil, fmt.Errorf("Error converting string to integer")
+		}
+		duration := time.Duration(secondsInt) * time.Second
+		pastTime := now.Add(-duration)
+
+		return []string{ip, matchBoots[1], pastTime.Format(time.RFC3339), matchEngineID[1], scanTime}, nil
 	}
 
 	return nil, fmt.Errorf("Error getting the SNMP values")
