@@ -2,6 +2,7 @@ package ip_extractor
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -16,20 +17,20 @@ const (
 	icmpProtocol = 1
 )
 
+type PathIP struct {
+	Hop int    `json:"hop"`
+	IP  string `json:"ip"`
+}
+
+type DomainData struct {
+	Domain  string   `json:"domain"`
+	PathIPs []PathIP `json:"pathIPs"`
+}
+
 func ExtractIPs() {
-
-	// Create file to store all unique ip addresses
-	file, err := os.Create("./input/ips.txt")
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-	writer := bufio.NewWriter(file)
-
-	// ipsSet := make(map[string]bool)
 	// getDomains reads the domain.txt file and returns all unique website domains
 	hosts := getDomains()
+	var domainDataArray []DomainData
 
 	for _, host := range hosts {
 		// traceroute(host) performs a traceroute operation in golang and returns set of ips, that were travelled through
@@ -39,50 +40,37 @@ func ExtractIPs() {
 			return
 		}
 
-		// Write the domain to the file
-        _, fErr := writer.WriteString(host)
-        if fErr != nil {
-            fmt.Println("Error writing to file:", fErr)
-            return
-        }
-
+		var pathIPs []PathIP
+		hop := 1
 		for ip := range ips {
-            _, fErr := writer.WriteString(", " + ip)
-            if fErr != nil {
-                fmt.Println("Error writing to file:", fErr)
-                return
-            }
-        }
-
-		_, fErr = writer.WriteString("\n")
-        if fErr != nil {
-            fmt.Println("Error writing to file:", fErr)
-            return
-        }
-
-		if fErr := writer.Flush(); fErr != nil {
-			fmt.Println("Error flushing writer:", fErr)
-			return
+			pathIPs = append(pathIPs, PathIP{hop, ip})
+			hop = hop + 1
 		}
 
-		// for ip := range ips {
-		// 	ipsSet[ip] = true
-		// }
+		domainDataArray = append(domainDataArray, DomainData{host, pathIPs})
 	}
 
-	// Save all ip addresses to the file.
-	// for ip := range ipsSet {
-	// 	_, fErr := writer.WriteString(ip + "\n")
-	// 	if fErr != nil {
-	// 		fmt.Println("Error writing to file:", fErr)
-	// 		return
-	// 	}
-	// }
+	jsonData, err := json.MarshalIndent(domainDataArray, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
 
-	// if fErr := writer.Flush(); fErr != nil {
-	// 	fmt.Println("Error flushing writer:", fErr)
-	// 	return
-	// }
+	file, err := os.Create("./input/ips.json")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Write the JSON data to the file
+	_, err = file.Write(jsonData)
+	if err != nil {
+		fmt.Println("Error writing JSON to file:", err)
+		return
+	}
+
+	fmt.Println("JSON data saved to domain_data.json")
 }
 
 func getDomains() []string {

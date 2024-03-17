@@ -1,8 +1,8 @@
 package snmp_sender
 
 import (
-	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -13,25 +13,40 @@ import (
 	"github.com/gosnmp/gosnmp"
 )
 
+type PathIP struct {
+	Hop int    `json:"hop"`
+	IP  string `json:"ip"`
+}
+
+type DomainData struct {
+	Domain  string   `json:"domain"`
+	PathIPs []PathIP `json:"pathIPs"`
+}
+
 // readIPsFromFile reads the IPs from the file
 func readIPsFromFile() ([][]string, error) {
 	// Open the file
-	file, err := os.Open("input/ips.txt")
+	file, err := os.Open("input/ips.json")
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var records [][]string
-	scanner := bufio.NewScanner(file)
-	// Read each line and split it by comma, first is the domain, and then it is the IPs
-	for scanner.Scan() {
-		records = append(records, strings.Split(scanner.Text(), ","))
+	var domainDataArray []DomainData
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&domainDataArray)
+	if err != nil {
+		fmt.Println("Error decoding JSON:", err)
 	}
 
-	// Check for errors during scanning
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	var records [][]string
+	for _, domainData := range domainDataArray {
+		var record []string
+		record = append(record, domainData.Domain)
+		for _, ip := range domainData.PathIPs {
+			record = append(record, ip.IP)
+		}
+		records = append(records, record)
 	}
 
 	return records, nil
