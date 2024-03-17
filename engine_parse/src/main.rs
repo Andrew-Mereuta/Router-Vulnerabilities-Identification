@@ -1,6 +1,6 @@
 use anyhow::Result;
 use csv::ReaderBuilder;
-use std::{collections::HashSet, fs, u128};
+use std::{collections::HashSet, env, fs, u128};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -102,7 +102,6 @@ impl<'a> DeviceID<'a> {
                     .map(|b| format!("{:#04x}", b)[2..].to_owned())
                     .collect::<Vec<_>>()
                     .join(":");
-                println!("parsed mac: {}", id_str);
                 let macs = mac_blocks
                     .iter()
                     .filter(|mb| id_str.starts_with(&mb.prefix.to_lowercase()))
@@ -177,8 +176,6 @@ impl<'a> EngineID<'a> {
             Err(EngineParseError::IdTooLong(id_str.to_owned(), id_str.len()))?
         }
         let padded_str = format!("{:0<64}", id_str);
-        println!("-- string step --");
-        println!("{}\n{}", id_str, padded_str);
         let id = u128::from_str_radix(&padded_str[..32], 16)?;
         let overflow = u128::from_str_radix(&padded_str[32..], 16)?;
         EngineID::new(id, overflow, id_str.len(), vendors, mac_blocks)
@@ -299,17 +296,21 @@ fn load_mac_blocks(file: &str) -> Result<Vec<MacBlock>> {
 }
 
 fn main() -> Result<()> {
-    // TODO: move file names into parameters?
-    let file =
-        fs::read_to_string("data/enterprise-numbers").expect("Missing the enterprise numbers file");
+    let mut args = env::args().skip(1);
+    let data_path = args.next().unwrap_or("data/snmp_results.csv".to_owned());
+    let out_path = args.next().unwrap_or("data/engine_ids.json".to_owned());
+    let vendor_path = args.next().unwrap_or("data/enterprise-numbers".to_owned());
+    let mac_path = args
+        .next()
+        .unwrap_or("data/mac-vendors-export.json".to_owned());
+    let file = fs::read_to_string(vendor_path).expect("Missing the enterprise numbers file");
     let vendors = load_vendors(&file)?;
-    let file = fs::read_to_string("data/mac-vendors-export.json")
-        .expect("Missing the file for the MAC blocks.");
+    let file = fs::read_to_string(mac_path).expect("Missing the file for the MAC blocks.");
     let mac_blocks = load_mac_blocks(&file)?;
     println!("Files loaded, loading data...\n");
     let ids = ReaderBuilder::new()
         .from_reader(
-            fs::read_to_string("data/snmp_results.csv")
+            fs::read_to_string(data_path)
                 .unwrap_or_else(|_| {
                     panic!("No SNMP data file found at `{}`", "data/snmp_results.csv")
                 })
@@ -348,7 +349,7 @@ fn main() -> Result<()> {
             o
         });
     // TODO: extend data instead of just replace?
-    fs::write("data/engine_ids.json", json::stringify(ids))?;
+    fs::write(out_path, json::stringify(ids))?;
     Ok(())
 }
 
