@@ -128,6 +128,8 @@ impl<'a> DeviceID<'a> {
 enum EngineParseError {
     #[error("EngineID ({0}) is too long ({1} > 64).")]
     IdTooLong(String, usize),
+    #[error("EngineID ({0}) is not in range of vendors.")]
+    NoVendor(String),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -152,7 +154,12 @@ impl<'a> EngineID<'a> {
     ) -> Result<Self> {
         let conform_mask = 0x8000_0000_0000_0000_0000_0000_0000_0000;
         let vendor_mask = 0x7fff_ffff_0000_0000_0000_0000_0000_0000;
-        let vendor = &vendors[((vendor_mask & id) >> 96) as usize];
+        let vendor =
+            &vendors
+                .get(((vendor_mask & id) >> 96) as usize)
+                .ok_or(EngineParseError::NoVendor(
+                    format!("{:#034x}{:#34x}", id, overflow).replace("0x", "")[..id_l].to_string(),
+                ))?;
         if (conform_mask & id) == 0 {
             let id_mask = 0x0000_0000_ffff_ffff_ffff_ffff_0000_0000;
             Ok(EngineID::CustomFormat {
