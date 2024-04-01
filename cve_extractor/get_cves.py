@@ -1,9 +1,18 @@
 import requests
 from datetime import datetime, timedelta
 import json
-# The API endpoint
+from argparse import ArgumentParser
+import csv
+from os.path import join
+import pytz
+import os
+
+utc=pytz.UTC
 
 
+output_folder = "./output"
+input_folder = "./input"
+api_key = "e9df04f8-5b8e-4c88-8089-0649f8fcef63"
 
 def craftReqURL(part, company, timeFrom, timeTo):
     fromstr = timeFrom.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
@@ -66,7 +75,7 @@ def filter_routers(x):
     # print(x)
     return "router" in json.dumps(x)
 
-def main(part, vendor, timeFrom):
+def main(part, vendor, timeFrom, engId):
     windowS = timeFrom
     windowE = windowS + timedelta(days = 100)
 
@@ -75,8 +84,10 @@ def main(part, vendor, timeFrom):
     while windowE <= datetime.now():
         url = craftReqURL(part, vendor, windowS, windowE)
         print(url)
+        
+        headers = {"apiKey": api_key}
 
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
 
         if response:
             routers = list(filter(filter_routers, response.json()["vulnerabilities"]))
@@ -88,12 +99,55 @@ def main(part, vendor, timeFrom):
         windowE = windowE + timedelta(days = 100)
 
     # print(vul)
+    try:
+        os.mkdir(f"../output/cves_per_engId/{engId}")
+    except:
+        pass
 
-    with open("./output/cves_full_format.json", "w") as f:
+    with open(f"../output/cves_per_engId/{engId}/cves_full_format.json", "w") as f:
         f.write(json.dumps(cves))
 
-    with open("./output/cves_important_info.json", "w") as f:
+    with open(f"../output/cves_per_engId/{engId}/cves_important_info.json", "w") as f:
         f.write(json.dumps(vul))
 
 if __name__ == "__main__":
-    main("h", "cisco", datetime(2020, 3, 15, 14, 30, 45, 0))
+    parser = ArgumentParser()
+    parser.add_argument("--engine_ids_file", type=str, required=True)
+    parser.add_argument("--engine_to_reset", type=str, required=True)
+
+    args = parser.parse_args()
+    engine_ids_file = args.engine_ids_file
+    engine_to_reset = args.engine_to_reset
+
+    with open(join(output_folder, engine_ids_file), "r") as f:
+        data = json.load(f)
+    
+    with open(join(output_folder, engine_to_reset), "r") as f:
+        reset_data = json.load(f)
+
+    with open(join(input_folder, "mapping.json"), "r") as f:
+        mapping = json.load(f)
+
+    for key in data:
+        if "vendor" not in data[key]:
+            print("No vendor for ", key)
+            continue
+        if "name" not in data[key]["vendor"]:
+            print("No name for vendor for ", key)
+            continue
+
+        company = data[key]["vendor"]["name"]
+
+        if company not in mapping:
+            print("No mapping for ", company)
+            continue
+
+        vendor =  mapping[company]
+
+        if key not in reset_data:
+            print("No reset date for ", key) 
+            continue
+
+        reset_date = datetime.fromisoformat(reset_data[key]).replace(tzinfo=None)
+
+        main("h", vendor, reset_date, key)
