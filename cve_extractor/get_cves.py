@@ -100,14 +100,14 @@ def main(part, vendor, timeFrom, engId):
 
     # print(vul)
     try:
-        os.mkdir(f"../output/cves_per_engId/{engId}")
+        os.mkdir(f"./output/cves_per_engId/{engId}")
     except:
         pass
 
-    with open(f"../output/cves_per_engId/{engId}/cves_full_format.json", "w") as f:
+    with open(f"./output/cves_per_engId/{engId}/cves_full_format.json", "w") as f:
         f.write(json.dumps(cves))
 
-    with open(f"../output/cves_per_engId/{engId}/cves_important_info.json", "w") as f:
+    with open(f"./output/cves_per_engId/{engId}/cves_important_info.json", "w") as f:
         f.write(json.dumps(vul))
 
 if __name__ == "__main__":
