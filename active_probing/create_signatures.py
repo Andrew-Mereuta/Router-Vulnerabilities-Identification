@@ -1,5 +1,7 @@
 """
 Script used to generate and export a list of LFP vendor specific signatures based on results of LFP probes. 
+This script is based on setup.py's output, please make sure to run ip_extractor and engine_parse first.
+    
 """
 
 
@@ -208,7 +210,7 @@ def add_signature_to_vendor(vendor: str, signature: str):
 """
 Read the snmp dataset and create a dictionary IP->VENDOR.
 """
-with open("output.csv", "r") as file:
+with open("output/output.csv", "r") as file:
     lines = [line.rstrip().split(",") for (line_index, line) in enumerate(file) if line_index != 0]
     for line in lines:
         snmp_dataset_vendors[line[DataColumn.IP._value_]] = line[DataColumn.VENDOR._value_]
@@ -296,7 +298,7 @@ print("Number of unique signatures: " + str(number_of_unique_signatures))
 
 
 # export signatures
-with open("signatures.csv", "w") as file:
+with open("signatures/signatures.csv", "w") as file:
     for vendor in unique_signatures:
         for sig in unique_signatures[vendor]:
             file.write(sig + "," + vendor + "\n")

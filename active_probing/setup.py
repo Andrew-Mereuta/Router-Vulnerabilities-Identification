@@ -37,7 +37,7 @@ def get_vendor(engine_id):
 def parse_data_line(columns):
     return ",".join(columns) + '\n'
 
-output_file = open('output.csv', 'w')
+output_file = open('output/output.csv', 'w')
 output_file.write(parse_data_line(output_headers))                                          # write header
 
 print("Parsing and filtering SNMPV3 entries...")
@@ -62,11 +62,11 @@ with open("../output/testing_snmp_results.csv") as file:
 
             output_file.write(parse_data_line(columns=columns))
 
-with open("unique_ips.txt", "w") as file:
+with open("output/unique_ips.txt", "w") as file:
     for unique_ip in unique_ips:
         file.writelines(unique_ip + "\n")
 
-with open("unknown_unique_ips.txt", "w") as file:
+with open("output/unknown_unique_ips.txt", "w") as file:
     for unique_ip in unique_unknown_ips:
         file.writelines(unique_ip + "\n")
 
