@@ -21,7 +21,8 @@ twitter.com
 wikipedia.org
 ```
 ### Run
-To run the code with `make`
+Run the code with `make` and enter the sudo password when asked (traceroutes need sudo access)
+As dependencies, the pipeline uses a combination of Golang, Rust and Python.
 
 ### Check outputs
 The code outputs 2 files (`./output/engine_to_cves.csv` and `./output/ips_to_cves.csv`) and a folder (`./output/cves_per_engId`)
