@@ -128,6 +128,15 @@ if __name__ == "__main__":
     with open(join(input_folder, "mapping.json"), "r") as f:
         mapping = json.load(f)
 
+    try:
+        os.rmdir("./output/cves_per_engId")
+    except:
+        print("error")
+        pass
+
+    os.mkdir("./output/cves_per_engId")
+
+
     for key in data:
         if "vendor" not in data[key]:
             print("No vendor for ", key)

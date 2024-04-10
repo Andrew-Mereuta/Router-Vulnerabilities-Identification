@@ -12,7 +12,9 @@ func main() {
 	// Call the ExtractIPs function from the ip_extractor package to extract IPs
 	ip_extractor.ExtractIPs()
 
-	fmt.Println("Sending SNMP requests...")
+	fmt.Println("\nSending SNMP requests...")
 	// Call the SnmpSend function from the snmp_sender package to send SNMP requests
 	snmp_sender.SnmpSend()
+
+	fmt.Println("")
 }
