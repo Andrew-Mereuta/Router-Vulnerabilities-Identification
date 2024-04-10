@@ -34,6 +34,7 @@ func ExtractIPs() {
 
 	for _, host := range hosts {
 		// traceroute(host) performs a traceroute operation in golang and returns set of ips, that were travelled through
+		fmt.Println("Tracerouting to", host, "...")
 		ips, err := traceroute(host)
 		if err != nil {
 			fmt.Println("Traceroute error:", err)
@@ -70,7 +71,7 @@ func ExtractIPs() {
 		return
 	}
 
-	fmt.Println("JSON data saved to domain_data.json")
+	fmt.Println("JSON data saved to ips.json")
 }
 
 func getDomains() []string {

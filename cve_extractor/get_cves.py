@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     engine_ids_file = args.engine_ids_file
-    engine_to_reset = args.engine_to_reset
+    engine_to_reset = args.engine_data
 
     with open(join(output_folder, engine_ids_file), "r") as f:
         data = json.load(f)
