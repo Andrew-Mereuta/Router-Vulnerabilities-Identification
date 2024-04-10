@@ -1,0 +1,28 @@
+False,dup,sz,i,False,False,False,False,64,64,64,84,40,76,MikroTik
+False,snz,sz,dup,False,False,False,False,64,64,64,84,40,76,MikroTik
+False,dup,sz,dup,False,False,False,False,64,64,64,84,40,76,MikroTik
+False,dup,sz,r,False,False,False,False,64,64,64,84,40,76,MikroTik
+True,echo,i,i1,False,False,False,False,255,255,255,84,40,96,ciscoSystems
+True,echo,i1,i,False,False,False,False,255,255,255,84,40,96,ciscoSystems
+True,echo,r,r,False,False,False,False,255,255,64,84,40,56,ciscoSystems
+True,echo,r,r,False,False,False,False,255,255,255,84,40,96,ciscoSystems
+True,echo,i,r,False,False,False,False,255,255,255,84,40,96,ciscoSystems
+True,echo,r,i1,False,False,False,False,255,255,255,84,40,96,ciscoSystems
+True,echo,sz,r,False,False,False,False,255,255,64,84,40,56,ciscoSystems
+False,i,r,r,False,True,False,False,255,64,64,84,40,56,Juniper Networks
+False,i,i,i,True,True,True,True,255,64,64,84,40,56,Juniper Networks
+False,r,i,i,False,False,False,True,255,64,64,84,40,56,Juniper Networks
+False,r,i,r,False,False,False,False,255,64,64,84,40,56,Juniper Networks
+True,echo,i,r,False,False,False,False,255,255,255,84,40,56,HUAWEI Technology Co.
+False,r,r,i,False,False,False,False,64,64,64,84,40,56,Brocade Communication Systems
+False,r,i,i,False,False,False,False,64,64,64,84,40,76,Brocade Communications Systems
+False,i,i,r,False,True,False,False,64,64,64,84,40,76,Brocade Communications Systems
+False,i,r,r,False,True,False,False,64,64,64,84,40,76,Brocade Communications Systems
+False,r,i,r,False,False,False,False,64,64,64,84,40,76,Brocade Communications Systems
+False,i,r,i,False,True,False,False,64,64,64,84,40,76,Brocade Communications Systems
+False,r,r,i,False,False,False,False,64,64,64,84,40,76,Brocade Communications Systems
+False,i,i,r,False,True,False,False,255,255,255,84,40,56,H3C
+True,echo,sz,r,False,False,False,False,64,255,64,84,40,76,OneAccess
+True,echo,i,i,False,False,False,True,255,64,64,84,40,56,Allied Telesis
+False,i,i,i,False,True,False,True,255,255,255,84,40,76,Hewlett-Packard
+True,echo,i,i,False,False,False,True,64,64,64,84,40,56,Nokia (formerly 'Alcatel-Lucent')
