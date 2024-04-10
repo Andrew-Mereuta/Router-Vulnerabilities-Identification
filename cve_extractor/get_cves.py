@@ -6,6 +6,7 @@ import csv
 from os.path import join
 import pytz
 import os
+import shutil
 
 utc=pytz.UTC
 
@@ -113,7 +114,7 @@ def main(part, vendor, timeFrom, engId):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--engine_ids_file", type=str, required=True)
-    parser.add_argument("--engine_to_reset", type=str, required=True)
+    parser.add_argument("--engine_data", type=str, required=True)
 
     args = parser.parse_args()
     engine_ids_file = args.engine_ids_file
@@ -128,11 +129,11 @@ if __name__ == "__main__":
     with open(join(input_folder, "mapping.json"), "r") as f:
         mapping = json.load(f)
 
-    try:
-        os.rmdir("./output/cves_per_engId")
-    except:
-        print("error")
-        pass
+    # try:
+    shutil.rmtree("./output/cves_per_engId")
+    # except:
+    #     print("error")
+    #     pass
 
     os.mkdir("./output/cves_per_engId")
 
@@ -157,6 +158,6 @@ if __name__ == "__main__":
             print("No reset date for ", key) 
             continue
 
-        reset_date = datetime.fromisoformat(reset_data[key]).replace(tzinfo=None)
+        reset_date = datetime.fromisoformat(reset_data[key]["reset_date"]).replace(tzinfo=None)
 
         main("h", vendor, reset_date, key)

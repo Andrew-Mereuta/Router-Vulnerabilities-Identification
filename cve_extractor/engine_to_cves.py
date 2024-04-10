@@ -21,7 +21,7 @@ metricToNumber = {
 def main():
     analysedEngIds = [name for name in os.listdir(join(output_folder, "cves_per_engId"))]
 
-    with open(join(output_folder, "engine_to_ips.json"), "r") as f:
+    with open(join(output_folder, "engine_data.json"), "r") as f:
         engToIps = json.load(f)
 
     with open(join(output_folder, "engine_to_cves.csv"), 'w', newline='') as file:
@@ -56,7 +56,7 @@ def main():
                     print("No metric for CVE: " + cve["id"] + " in engineId: " + engineId)
             
             
-            writer.writerow([engineId, maxSev, maxSevCVEs, allCVEs, engToIps[engineId]])
+            writer.writerow([engineId, maxSev, maxSevCVEs, allCVEs, engToIps[engineId]["ips"]])
 
 if __name__ == "__main__":
     main()

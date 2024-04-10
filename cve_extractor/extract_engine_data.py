@@ -14,21 +14,23 @@ def main(snmp_results):
         reader = csv.reader(f)
         next(reader)
         for i, row in enumerate(reader):
-            ip = row[1]
             engineId = row[4]
+            ip = row[1]
+            reset_date = row[3]
 
             if engineId == "Error":
                 continue
             
             if engineId not in engToIps:
-                engToIps[engineId] = set()
+                engToIps[engineId] = {"ips": set(), "reset_date": None}
             # writer.writerow([engineId, reset_date])
-            engToIps[engineId].add(ip)
+            engToIps[engineId]["ips"].add(ip)
+            engToIps[engineId]["reset_date"] = reset_date
 
     for key in engToIps:
-        engToIps[key] = list(engToIps[key])
+        engToIps[key]["ips"] = list(engToIps[key]["ips"])
 
-    with open(join(output_folder, "engine_to_ips.json"), "w") as f:
+    with open(join(output_folder, "engine_data.json"), "w") as f:
         json.dump(engToIps, f)
             
 
@@ -36,7 +38,7 @@ def main(snmp_results):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--snmp_results", type=str, default="testing_snmp_results.csv")
+    parser.add_argument("--snmp_results", type=str)
 
     args = parser.parse_args()
 
