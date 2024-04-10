@@ -1,4 +1,4 @@
-# HackingLab
+# Router-Vulnerabilities-Identification
 
 The goal of this project is to extract possible vunerabilities in routers on the routes to destinations given by domain names. To do this we created a pipeline including a series of scripts that in order:
 
