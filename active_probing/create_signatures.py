@@ -300,8 +300,8 @@ print("Number of unique signatures: " + str(number_of_unique_signatures))
 # export signatures
 with open("signatures/signatures.csv", "w") as file:
     for vendor in unique_signatures:
-        for sig in unique_signatures[vendor]:
-            file.write(sig + "," + vendor + "\n")
+        for index, sig in enumerate(unique_signatures[vendor]):
+            file.write(sig + "," + vendor + "_" + str(index+1)+ "\n")
 
 
 
